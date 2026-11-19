@@ -13,13 +13,18 @@ public class ProjectService {
 
     private final ProjectRepository projectRepository;
     private final TaskRepository taskRepository;
+    private final ProjectMemberRepository memberRepository;
 
-    public ProjectService(ProjectRepository projectRepository, TaskRepository taskRepository) {
+    public ProjectService(ProjectRepository projectRepository,
+            TaskRepository taskRepository,
+            ProjectMemberRepository memberRepository) {
         this.projectRepository = projectRepository;
         this.taskRepository = taskRepository;
+        this.memberRepository = memberRepository;
     }
 
-    public Project create(ProjectRequest request) {
+    @Transactional
+    public Project create(ProjectRequest request, String username) {
         String prefix = request.keyPrefix();
         if (prefix == null || !prefix.matches("[A-Z]{2,5}")) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
@@ -32,11 +37,21 @@ public class ProjectService {
         project.setName(request.name());
         project.setDescription(request.description());
         project.setKeyPrefix(prefix);
-        return projectRepository.save(project);
+        Project saved = projectRepository.save(project);
+
+        ProjectMember lead = new ProjectMember(); // the creator becomes the lead
+        lead.setProjectId(saved.getId());
+        lead.setUsername(username);
+        lead.setRole(ProjectRole.LEAD);
+        memberRepository.save(lead);
+        return saved;
     }
 
-    public List<Project> findAll() {
-        return projectRepository.findAll();
+    public List<Project> findForUser(String username) {
+        List<Long> ids = memberRepository.findByUsername(username).stream()
+                .map(ProjectMember::getProjectId)
+                .toList();
+        return projectRepository.findAllById(ids);
     }
 
     public Project get(Long id) {
@@ -48,13 +63,14 @@ public class ProjectService {
         Project project = get(id);
         project.setName(request.name());
         project.setDescription(request.description());
-        return projectRepository.save(project); // keyPrefix never changes
+        return projectRepository.save(project);
     }
 
     @Transactional
     public void delete(Long id) {
         Project project = get(id);
         taskRepository.deleteByProjectId(id);
+        memberRepository.deleteByProjectId(id);
         projectRepository.delete(project);
     }
 }

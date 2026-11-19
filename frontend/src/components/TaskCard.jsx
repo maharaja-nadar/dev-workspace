@@ -5,7 +5,7 @@ const STATUSES = [
   ["DONE", "Done"],
 ];
 
-export default function TaskCard({ task, onStatusChange, onDelete }) {
+export default function TaskCard({ task, canDelete, onStatusChange, onDelete }) {
   return (
     <div className="card">
       <span className="key">{task.taskKey}</span>
@@ -27,9 +27,11 @@ export default function TaskCard({ task, onStatusChange, onDelete }) {
             </option>
           ))}
         </select>
-        <button className="link" onClick={() => onDelete(task.id)}>
-          Delete
-        </button>
+        {canDelete && (
+          <button className="link" onClick={() => onDelete(task.id)}>
+            Delete
+          </button>
+        )}
       </div>
     </div>
   );

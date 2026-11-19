@@ -9,7 +9,7 @@ const COLUMNS = [
   { status: "DONE", label: "Done" },
 ];
 
-export default function Board({ projectId, onError }) {
+export default function Board({ projectId, members, isLead, onError }) {
   const [tasks, setTasks] = useState([]);
   const [title, setTitle] = useState("");
   const [assignee, setAssignee] = useState("");
@@ -66,11 +66,14 @@ export default function Board({ projectId, onError }) {
           onChange={(e) => setTitle(e.target.value)}
           required
         />
-        <input
-          placeholder="Assignee username"
-          value={assignee}
-          onChange={(e) => setAssignee(e.target.value)}
-        />
+        <select value={assignee} onChange={(e) => setAssignee(e.target.value)} aria-label="Assignee">
+          <option value="">Unassigned</option>
+          {members.map((m) => (
+            <option key={m.id} value={m.username}>
+              {m.username}
+            </option>
+          ))}
+        </select>
         <button className="btn primary">Add task</button>
       </form>
 
@@ -86,6 +89,7 @@ export default function Board({ projectId, onError }) {
                 <TaskCard
                   key={t.id}
                   task={t}
+                  canDelete={isLead}
                   onStatusChange={handleStatus}
                   onDelete={handleDelete}
                 />

@@ -66,6 +66,12 @@ public class ProjectService {
         return projectRepository.save(project);
     }
 
+    public Project linkRepo(Long id, String repoFullName) {
+        Project project = get(id);
+        project.setRepoFullName(repoFullName);
+        return projectRepository.save(project);
+    }
+
     @Transactional
     public void delete(Long id) {
         Project project = get(id);

@@ -42,6 +42,12 @@ public class ProjectController {
         return projectService.update(id, request);
     }
 
+    @PutMapping("/{id}/repo")
+    public Project linkRepo(@PathVariable Long id, @Valid @RequestBody RepoRequest request, Authentication auth) {
+        access.requireLead(id, auth.getName());
+        return projectService.linkRepo(id, request.repoFullName());
+    }
+
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id, Authentication auth) {

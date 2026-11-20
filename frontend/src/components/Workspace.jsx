@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { getProjects, createProject, getMembers, getUsername } from "../api";
 import Board from "./Board";
 import MembersPanel from "./MembersPanel";
+import RepoPanel from "./RepoPanel";
 
 export default function Workspace({ onLogout }) {
   const me = getUsername();
@@ -54,6 +55,7 @@ export default function Workspace({ onLogout }) {
   }
 
   const isLead = members.some((m) => m.username === me && m.role === "LEAD");
+  const project = projects.find((p) => p.id === projectId);
 
   return (
     <div className="app">
@@ -112,6 +114,14 @@ export default function Workspace({ onLogout }) {
             onChanged={loadMembers}
             onError={setError}
           />
+          {project && (
+            <RepoPanel
+              project={project}
+              isLead={isLead}
+              onLinked={() => loadProjects(projectId)}
+              onError={setError}
+            />
+          )}
           <Board key={projectId} projectId={projectId} members={members} isLead={isLead} onError={setError} />
         </>
       ) : (

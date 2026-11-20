@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getTasks, createTask, updateStatus, deleteTask } from "../api";
+import { getTasks, getEvents, createTask, updateStatus, deleteTask } from "../api";
 import TaskCard from "./TaskCard";
 
 const COLUMNS = [
@@ -11,20 +11,25 @@ const COLUMNS = [
 
 export default function Board({ projectId, members, isLead, onError }) {
   const [tasks, setTasks] = useState([]);
+  const [events, setEvents] = useState([]);
   const [title, setTitle] = useState("");
   const [assignee, setAssignee] = useState("");
 
-  async function load() {
+  async function load(showErrors = true) {
     try {
-      setTasks(await getTasks(projectId));
-      onError("");
+      const [taskList, eventList] = await Promise.all([getTasks(projectId), getEvents(projectId)]);
+      setTasks(taskList);
+      setEvents(eventList);
+      if (showErrors) onError("");
     } catch (e) {
-      onError(e.message);
+      if (showErrors) onError(e.message);
     }
   }
 
   useEffect(() => {
     load();
+    const timer = setInterval(() => load(false), 5000); // picks up GitHub activity
+    return () => clearInterval(timer);
   }, [projectId]);
 
   async function handleAdd(e) {
@@ -89,6 +94,7 @@ export default function Board({ projectId, members, isLead, onError }) {
                 <TaskCard
                   key={t.id}
                   task={t}
+                  events={events.filter((ev) => ev.taskKey === t.taskKey)}
                   canDelete={isLead}
                   onStatusChange={handleStatus}
                   onDelete={handleDelete}

@@ -5,7 +5,14 @@ const STATUSES = [
   ["DONE", "Done"],
 ];
 
-export default function TaskCard({ task, canDelete, onStatusChange, onDelete }) {
+const EVENT_LABELS = {
+  COMMIT: ["Commit", "tag"],
+  PR_OPENED: ["PR opened", "tag pr"],
+  PR_MERGED: ["PR merged", "tag merged"],
+  PR_CLOSED: ["PR closed", "tag pr"],
+};
+
+export default function TaskCard({ task, events, canDelete, onStatusChange, onDelete }) {
   return (
     <div className="card">
       <span className="key">{task.taskKey}</span>
@@ -33,6 +40,29 @@ export default function TaskCard({ task, canDelete, onStatusChange, onDelete }) 
           </button>
         )}
       </div>
+
+      {events.length > 0 && (
+        <details className="activity">
+          <summary>{events.length} GitHub activity</summary>
+          <ul>
+            {events.map((ev) => {
+              const [label, css] = EVENT_LABELS[ev.type] || [ev.type, "tag"];
+              return (
+                <li key={ev.id}>
+                  <span className={css}>{label}</span>
+                  {ev.message}
+                  {ev.author && <span className="by">by {ev.author}</span>}
+                  {ev.url && ev.url.startsWith("https://") && (
+                    <a href={ev.url} target="_blank" rel="noreferrer">
+                      view
+                    </a>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </details>
+      )}
     </div>
   );
 }

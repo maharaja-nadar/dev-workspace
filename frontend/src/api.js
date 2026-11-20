@@ -79,3 +79,7 @@ export const createTask = (projectId, data) =>
 export const updateStatus = (taskId, status) =>
   request(`/tasks/${taskId}/status`, { method: "PATCH", body: JSON.stringify({ status }) });
 export const deleteTask = (taskId) => request(`/tasks/${taskId}`, { method: "DELETE" });
+
+export const getEvents = (projectId) => request(`/projects/${projectId}/events`);
+export const linkRepo = (projectId, repoFullName) =>
+  request(`/projects/${projectId}/repo`, { method: "PUT", body: JSON.stringify({ repoFullName }) });

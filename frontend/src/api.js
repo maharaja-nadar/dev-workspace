@@ -1,4 +1,4 @@
-const BASE = "http://localhost:8080/api";
+const BASE = "/api";
 const TOKEN_KEY = "dw_token";
 const USER_KEY = "dw_user";
 

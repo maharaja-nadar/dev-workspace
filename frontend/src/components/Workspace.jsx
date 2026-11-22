@@ -60,7 +60,7 @@ export default function Workspace({ onLogout }) {
   return (
     <div className="app">
       <header className="top">
-        <h1>DevWorkspace</h1>
+        <h1>Dev Vectra</h1>
         <div className="top-right">
           {projects.length > 0 && (
             <select

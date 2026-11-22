@@ -34,7 +34,7 @@ export default function AuthPage({ onLoggedIn }) {
 
   return (
     <main className="auth-card">
-      <h1>DevWorkspace</h1>
+    <h1>Dev Vectra</h1>
       <h2>{mode === "login" ? "Log in" : "Create an account"}</h2>
       <form onSubmit={handleSubmit}>
         <label>

@@ -8,6 +8,6 @@ public class HealthController {
 
     @GetMapping("/api/health")
     public String health() {
-        return "Workspace API is running";
+        return "Dev Vectra API is running";
     }
 }

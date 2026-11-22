@@ -1,0 +1,57 @@
+
+name: Deploy Dev-Vectra Frontend
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Prepare deployment directory
+        run: |
+          ssh -i ~/.ssh/deploy_key \
+            ec2-user@${{ secrets.EC2_HOST }} \
+            "mkdir -p /tmp/devvectra-dist"
+
+      - name: Copy frontend build
+        run: |
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/deploy_key" \
+            frontend/dist/ \
+            ec2-user@${{ secrets.EC2_HOST }}:/tmp/devvectra-dist/
+
+      - name: Publish frontend
+        run: |
+          ssh -i ~/.ssh/deploy_key \
+            ec2-user@${{ secrets.EC2_HOST }} \
+            "sudo rsync -a --delete /tmp/devvectra-dist/ /var/www/workspace/"

@@ -83,3 +83,5 @@ export const deleteTask = (taskId) => request(`/tasks/${taskId}`, { method: "DEL
 export const getEvents = (projectId) => request(`/projects/${projectId}/events`);
 export const linkRepo = (projectId, repoFullName) =>
   request(`/projects/${projectId}/repo`, { method: "PUT", body: JSON.stringify({ repoFullName }) });
+
+export const getDeployments = (projectId) => request(`/projects/${projectId}/deployments`);

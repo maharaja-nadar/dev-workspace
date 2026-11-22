@@ -3,6 +3,7 @@ import { getProjects, createProject, getMembers, getUsername } from "../api";
 import Board from "./Board";
 import MembersPanel from "./MembersPanel";
 import RepoPanel from "./RepoPanel";
+import DeploymentsPanel from "./DeploymentsPanel";
 
 export default function Workspace({ onLogout }) {
   const me = getUsername();
@@ -122,6 +123,7 @@ export default function Workspace({ onLogout }) {
               onError={setError}
             />
           )}
+                    <DeploymentsPanel projectId={projectId} />  
           <Board key={projectId} projectId={projectId} members={members} isLead={isLead} onError={setError} />
         </>
       ) : (

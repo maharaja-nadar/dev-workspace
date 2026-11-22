@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { linkRepo } from "../api";
+import { linkRepo, unlinkRepo } from "../api";
 
 export default function RepoPanel({ project, isLead, onLinked, onError }) {
   const [repo, setRepo] = useState("");
@@ -9,6 +9,20 @@ export default function RepoPanel({ project, isLead, onLinked, onError }) {
     try {
       await linkRepo(project.id, repo.trim());
       setRepo("");
+      onError("");
+      await onLinked();
+    } catch (err) {
+      onError(err.message);
+    }
+  }
+
+  async function handleUnlink() {
+    const ok = window.confirm(
+      "Disconnect " + project.repoFullName + "? GitHub activity will stop updating tasks."
+    );
+    if (!ok) return;
+    try {
+      await unlinkRepo(project.id);
       onError("");
       await onLinked();
     } catch (err) {
@@ -37,6 +51,11 @@ export default function RepoPanel({ project, isLead, onLinked, onError }) {
             required
           />
           <button className="btn">{project.repoFullName ? "Change repo" : "Link repo"}</button>
+          {project.repoFullName && (
+            <button type="button" className="btn" onClick={handleUnlink}>
+              Disconnect
+            </button>
+          )}
         </form>
       )}
     </section>

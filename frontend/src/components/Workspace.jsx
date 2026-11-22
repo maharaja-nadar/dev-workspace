@@ -4,6 +4,7 @@ import Board from "./Board";
 import MembersPanel from "./MembersPanel";
 import RepoPanel from "./RepoPanel";
 import DeploymentsPanel from "./DeploymentsPanel";
+import AccountPanel from "./AccountPanel";
 
 export default function Workspace({ onLogout }) {
   const me = getUsername();
@@ -88,6 +89,7 @@ export default function Workspace({ onLogout }) {
           {error}
         </p>
       )}
+            <AccountPanel onError={setError} />
 
       <form className="inline-form" onSubmit={handleCreateProject}>
         <input

@@ -85,3 +85,11 @@ export const linkRepo = (projectId, repoFullName) =>
   request(`/projects/${projectId}/repo`, { method: "PUT", body: JSON.stringify({ repoFullName }) });
 
 export const getDeployments = (projectId) => request(`/projects/${projectId}/deployments`);
+
+export const unlinkRepo = (projectId) =>
+  request(`/projects/${projectId}/repo`, { method: "DELETE" });
+export const getProfile = () => request("/profile");
+export const updateGithubUsername = (githubUsername) =>
+  request("/profile/github", { method: "PUT", body: JSON.stringify({ githubUsername }) });
+export const changePassword = (currentPassword, newPassword) =>
+  request("/profile/password", { method: "PUT", body: JSON.stringify({ currentPassword, newPassword }) });

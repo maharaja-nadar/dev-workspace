@@ -55,4 +55,30 @@ public class AuthService {
         JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
         return jwtEncoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
     }
+
+    public ProfileResponse profile(String username) {
+        AppUser user = find(username);
+        return new ProfileResponse(user.getUsername(), user.getGithubUsername());
+    }
+
+    public ProfileResponse updateGithub(String username, String githubUsername) {
+        AppUser user = find(username);
+        user.setGithubUsername(githubUsername == null || githubUsername.isBlank() ? null : githubUsername.trim());
+        userRepository.save(user);
+        return new ProfileResponse(user.getUsername(), user.getGithubUsername());
+    }
+
+    public void changePassword(String username, ChangePasswordRequest request) {
+        AppUser user = find(username);
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Current password is wrong");
+        }
+        user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+        userRepository.save(user);
+    }
+
+    private AppUser find(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+    }
 }

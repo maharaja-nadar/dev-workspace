@@ -79,4 +79,10 @@ public class ProjectService {
         memberRepository.deleteByProjectId(id);
         projectRepository.delete(project);
     }
+
+    public Project unlinkRepo(Long id) {
+        Project project = get(id);
+        project.setRepoFullName(null);
+        return projectRepository.save(project);
+    }
 }

@@ -13,6 +13,7 @@ public class ProjectMemberController {
 
     private final ProjectMemberService memberService;
     private final ProjectAccessService access;
+    
 
     public ProjectMemberController(ProjectMemberService memberService, ProjectAccessService access) {
         this.memberService = memberService;
@@ -40,4 +41,6 @@ public class ProjectMemberController {
         access.requireLead(projectId, auth.getName());
         memberService.remove(projectId, username);
     }
+
+
 }

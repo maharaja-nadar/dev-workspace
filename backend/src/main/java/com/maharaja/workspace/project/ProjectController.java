@@ -54,4 +54,10 @@ public class ProjectController {
         access.requireLead(id, auth.getName());
         projectService.delete(id);
     }
+
+    @DeleteMapping("/{id}/repo")
+    public Project unlinkRepo(@PathVariable Long id, Authentication auth) {
+        access.requireLead(id, auth.getName());
+        return projectService.unlinkRepo(id);
+    }
 }

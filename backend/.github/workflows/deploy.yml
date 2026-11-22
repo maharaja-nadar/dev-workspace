@@ -1,0 +1,101 @@
+name: Build and deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      HOST: ${{ secrets.EC2_HOST }}
+      DEPLOY_USER: ${{ secrets.EC2_USER }}
+      APP_URL: ${{ secrets.APP_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build backend
+        working-directory: backend
+        run: |
+          chmod +x mvnw
+          ./mvnw -B -ntp clean package
+
+      - name: Build frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Set up SSH
+        env:
+          SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts
+
+      - name: Upload files
+        run: |
+          scp -i ~/.ssh/deploy_key backend/target/workspace-0.0.1-SNAPSHOT.jar "$DEPLOY_USER@$HOST:/opt/workspace/workspace.jar.new"
+          rsync -az --delete -e "ssh -i ~/.ssh/deploy_key" frontend/dist/ "$DEPLOY_USER@$HOST:/var/www/workspace/"
+
+      - name: Restart the app
+        run: |
+          ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$HOST" "mv /opt/workspace/workspace.jar.new /opt/workspace/workspace.jar && sudo systemctl restart workspace"
+
+      - name: Wait for the app
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS "$APP_URL/api/health" > /dev/null; then
+              echo "App is up"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "App did not come up"
+          exit 1
+
+      - name: Record deployment (success)
+        if: success()
+        continue-on-error: true
+        env:
+          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          jq -n --arg repo "$GITHUB_REPOSITORY" --arg sha "$GITHUB_SHA" --arg msg "$COMMIT_MESSAGE" \
+            '{repo: $repo, commit: $sha, status: "SUCCESS", message: $msg}' |
+          curl -fsS -X POST "$APP_URL/api/webhooks/deploy" \
+            -H "Content-Type: application/json" -H "X-Deploy-Token: $DEPLOY_TOKEN" --data @-
+
+      - name: Record deployment (failure)
+        if: failure()
+        continue-on-error: true
+        env:
+          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          jq -n --arg repo "$GITHUB_REPOSITORY" --arg sha "$GITHUB_SHA" --arg msg "$COMMIT_MESSAGE" \
+            '{repo: $repo, commit: $sha, status: "FAILED", message: $msg}' |
+          curl -fsS -X POST "$APP_URL/api/webhooks/deploy" \
+            -H "Content-Type: application/json" -H "X-Deploy-Token: $DEPLOY_TOKEN" --data @-

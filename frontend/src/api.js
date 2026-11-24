@@ -93,3 +93,7 @@ export const updateGithubUsername = (githubUsername) =>
   request("/profile/github", { method: "PUT", body: JSON.stringify({ githubUsername }) });
 export const changePassword = (currentPassword, newPassword) =>
   request("/profile/password", { method: "PUT", body: JSON.stringify({ currentPassword, newPassword }) });
+
+export const getCanCreate = () => request("/projects/can-create");
+export const getMemberCandidates = (projectId, q) =>
+  request(`/projects/${projectId}/members/candidates?q=${encodeURIComponent(q)}`);

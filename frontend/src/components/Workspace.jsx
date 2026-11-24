@@ -1,16 +1,16 @@
 import { useEffect, useState } from "react";
-import { getProjects, createProject, getMembers, getUsername } from "../api";
+import { getProjects, createProject, getMembers, getUsername, getCanCreate } from "../api";
+import { avatarColor, initials } from "../avatar";
 import Board from "./Board";
 import MembersPanel from "./MembersPanel";
 import RepoPanel from "./RepoPanel";
-import DeploymentsPanel from "./DeploymentsPanel";
-import AccountPanel from "./AccountPanel";
 
 export default function Workspace({ onLogout }) {
   const me = getUsername();
   const [projects, setProjects] = useState([]);
   const [projectId, setProjectId] = useState(null);
   const [members, setMembers] = useState([]);
+  const [canCreate, setCanCreate] = useState(false);
   const [error, setError] = useState("");
   const [name, setName] = useState("");
   const [keyPrefix, setKeyPrefix] = useState("");
@@ -37,6 +37,9 @@ export default function Workspace({ onLogout }) {
 
   useEffect(() => {
     loadProjects();
+    getCanCreate()
+      .then((r) => setCanCreate(r.canCreate))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -62,7 +65,10 @@ export default function Workspace({ onLogout }) {
   return (
     <div className="app">
       <header className="top">
-        <h1>DevVectra</h1>
+        <div className="brand">
+          <span className="logo">DV</span>
+          <span className="brand-name">Dev Vectra</span>
+        </div>
         <div className="top-right">
           {projects.length > 0 && (
             <select
@@ -77,7 +83,15 @@ export default function Workspace({ onLogout }) {
               ))}
             </select>
           )}
-          <span className="who">Signed in as {me}</span>
+          <div className="chip">
+            <span className="avatar" style={{ background: avatarColor(me) }}>
+              {initials(me)}
+            </span>
+            <span className="chip-name">{me}</span>
+            {project && (
+              <span className={"badge" + (isLead ? " lead" : "")}>{isLead ? "Lead" : "Developer"}</span>
+            )}
+          </div>
           <button className="btn" onClick={onLogout}>
             Log out
           </button>
@@ -89,47 +103,53 @@ export default function Workspace({ onLogout }) {
           {error}
         </p>
       )}
-            <AccountPanel onError={setError} />
 
-      <form className="inline-form" onSubmit={handleCreateProject}>
-        <input
-          placeholder="New project name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-        />
-        <input
-          placeholder="Key (e.g. WS)"
-          value={keyPrefix}
-          onChange={(e) => setKeyPrefix(e.target.value)}
-          maxLength={5}
-          required
-        />
-        <button className="btn">Add project</button>
-      </form>
+      {canCreate && (
+        <details className="new-project">
+          <summary>+ New project</summary>
+          <form className="inline-form" onSubmit={handleCreateProject}>
+            <input placeholder="Project name" value={name} onChange={(e) => setName(e.target.value)} required />
+            <input
+              placeholder="Key (e.g. WS)"
+              value={keyPrefix}
+              onChange={(e) => setKeyPrefix(e.target.value)}
+              maxLength={5}
+              required
+            />
+            <button className="btn primary">Create project</button>
+          </form>
+        </details>
+      )}
 
-      {projectId ? (
+      {projectId && project ? (
         <>
-          <MembersPanel
-            projectId={projectId}
-            members={members}
-            isLead={isLead}
-            onChanged={loadMembers}
-            onError={setError}
-          />
-          {project && (
+          <div className="page-head">
+            <h1>{project.name}</h1>
+            <span className="key-pill">{project.keyPrefix}</span>
+          </div>
+          <div className="panels" style={{ marginBottom: 14 }}>
+            <MembersPanel
+              projectId={projectId}
+              members={members}
+              isLead={isLead}
+              onChanged={loadMembers}
+              onError={setError}
+            />
             <RepoPanel
               project={project}
               isLead={isLead}
               onLinked={() => loadProjects(projectId)}
               onError={setError}
             />
-          )}
-                    <DeploymentsPanel projectId={projectId} />  
+          </div>
           <Board key={projectId} projectId={projectId} members={members} isLead={isLead} onError={setError} />
         </>
       ) : (
-        <p className="empty">Create a project to begin. You become its lead.</p>
+        <p className="empty">
+          {canCreate
+            ? "Create your first project to get started. You will be its lead."
+            : "You are not in a project yet. Ask your team lead to add you."}
+        </p>
       )}
     </div>
   );

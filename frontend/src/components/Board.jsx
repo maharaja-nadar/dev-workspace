@@ -3,10 +3,10 @@ import { getTasks, getEvents, createTask, updateStatus, deleteTask } from "../ap
 import TaskCard from "./TaskCard";
 
 const COLUMNS = [
-  { status: "TODO", label: "To Do" },
-  { status: "IN_PROGRESS", label: "In Progress" },
-  { status: "IN_REVIEW", label: "In Review" },
-  { status: "DONE", label: "Done" },
+  { status: "TODO", label: "To Do", color: "#94a3b8" },
+  { status: "IN_PROGRESS", label: "In Progress", color: "#f59e0b" },
+  { status: "IN_REVIEW", label: "In Review", color: "#8b5cf6" },
+  { status: "DONE", label: "Done", color: "#10b981" },
 ];
 
 export default function Board({ projectId, members, isLead, onError }) {
@@ -28,7 +28,7 @@ export default function Board({ projectId, members, isLead, onError }) {
 
   useEffect(() => {
     load();
-    const timer = setInterval(() => load(false), 5000); // picks up GitHub activity
+    const timer = setInterval(() => load(false), 5000);
     return () => clearInterval(timer);
   }, [projectId]);
 
@@ -62,34 +62,70 @@ export default function Board({ projectId, members, isLead, onError }) {
     }
   }
 
+  const total = tasks.length;
+  const done = tasks.filter((t) => t.status === "DONE").length;
+  const percent = total === 0 ? 0 : Math.round((done / total) * 100);
+
   return (
     <>
-      <form className="inline-form" onSubmit={handleAdd}>
-        <input
-          placeholder="New task title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          required
-        />
-        <select value={assignee} onChange={(e) => setAssignee(e.target.value)} aria-label="Assignee">
-          <option value="">Unassigned</option>
-          {members.map((m) => (
-            <option key={m.id} value={m.username}>
-              {m.username}
-            </option>
-          ))}
-        </select>
-        <button className="btn primary">Add task</button>
-      </form>
+      <div className="stats">
+        {COLUMNS.map((col) => (
+          <div className="stat" key={col.status}>
+            <div className="stat-top">
+              <span className="stat-dot" style={{ background: col.color }} />
+              {col.label}
+            </div>
+            <div className="stat-num">{tasks.filter((t) => t.status === col.status).length}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="progress-wrap">
+        <div className="progress-meta">
+          <span>Overall progress</span>
+          <span>
+            {done} of {total} done ({percent}%)
+          </span>
+        </div>
+        <div className="progress">
+          <div className="progress-fill" style={{ width: percent + "%" }} />
+        </div>
+      </div>
+
+      {isLead ? (
+        <form className="new-task inline-form" onSubmit={handleAdd}>
+          <input
+            style={{ flex: 1, minWidth: 200 }}
+            placeholder="New task title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+          />
+          <select value={assignee} onChange={(e) => setAssignee(e.target.value)} aria-label="Assignee">
+            <option value="">Unassigned</option>
+            {members.map((m) => (
+              <option key={m.id} value={m.username}>
+                {m.username}
+              </option>
+            ))}
+          </select>
+          <button className="btn primary">Add task</button>
+        </form>
+      ) : (
+        <p className="hint">Your lead creates and assigns tasks. You can update the status of the work you do.</p>
+      )}
 
       <div className="columns">
         {COLUMNS.map((col) => {
           const items = tasks.filter((t) => t.status === col.status);
           return (
             <section className="column" key={col.status}>
-              <h2>
-                {col.label} <span className="count">{items.length}</span>
-              </h2>
+              <div className="col-head">
+                <span className="col-dot" style={{ background: col.color }} />
+                {col.label}
+                <span className="count">{items.length}</span>
+              </div>
+              {items.length === 0 && <div className="col-empty">No tasks</div>}
               {items.map((t) => (
                 <TaskCard
                   key={t.id}

@@ -1,3 +1,5 @@
+import { avatarColor, initials } from "../avatar";
+
 const STATUSES = [
   ["TODO", "To Do"],
   ["IN_PROGRESS", "In Progress"],
@@ -15,15 +17,28 @@ const EVENT_LABELS = {
 export default function TaskCard({ task, events, canDelete, onStatusChange, onDelete }) {
   return (
     <div className="card">
-      <span className="key">{task.taskKey}</span>
+      <div className="card-top">
+        <span className="key">{task.taskKey}</span>
+        {canDelete && (
+          <button className="link" onClick={() => onDelete(task.id)}>
+            Delete
+          </button>
+        )}
+      </div>
       <div className="title">{task.title}</div>
       <div className="meta">
-        {task.assignee && (
-          <span className="avatar" title={task.assignee}>
-            {task.assignee.slice(0, 2).toUpperCase()}
+        {task.assignee ? (
+          <span className="assignee">
+            <span className="avatar sm" style={{ background: avatarColor(task.assignee) }}>
+              {initials(task.assignee)}
+            </span>
+            {task.assignee}
           </span>
+        ) : (
+          <span className="assignee muted">Unassigned</span>
         )}
         <select
+          className="status-select"
           value={task.status}
           onChange={(e) => onStatusChange(task.id, e.target.value)}
           aria-label="Change status"
@@ -34,11 +49,6 @@ export default function TaskCard({ task, events, canDelete, onStatusChange, onDe
             </option>
           ))}
         </select>
-        {canDelete && (
-          <button className="link" onClick={() => onDelete(task.id)}>
-            Delete
-          </button>
-        )}
       </div>
 
       {events.length > 0 && (
@@ -51,7 +61,7 @@ export default function TaskCard({ task, events, canDelete, onStatusChange, onDe
                 <li key={ev.id}>
                   <span className={css}>{label}</span>
                   {ev.message}
-                  {ev.author && <span className="by">by {ev.author}</span>}
+                  {ev.author && <span className="by"> by {ev.author}</span>}
                   {ev.url && ev.url.startsWith("https://") && (
                     <a href={ev.url} target="_blank" rel="noreferrer">
                       view

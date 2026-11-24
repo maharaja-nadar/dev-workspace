@@ -1,5 +1,7 @@
 package com.maharaja.workspace.project;
 
+import com.maharaja.workspace.auth.AppUser;
+import com.maharaja.workspace.auth.UserRepository;
 import com.maharaja.workspace.task.TaskRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -14,17 +16,34 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
     private final TaskRepository taskRepository;
     private final ProjectMemberRepository memberRepository;
+    private final UserRepository userRepository;
 
     public ProjectService(ProjectRepository projectRepository,
             TaskRepository taskRepository,
-            ProjectMemberRepository memberRepository) {
+            ProjectMemberRepository memberRepository,
+            UserRepository userRepository) {
         this.projectRepository = projectRepository;
         this.taskRepository = taskRepository;
         this.memberRepository = memberRepository;
+        this.userRepository = userRepository;
+    }
+
+    /**
+     * A user may create projects if registered as team lead, or if already a lead
+     * somewhere.
+     */
+    public boolean canCreateProjects(String username) {
+        boolean flagged = userRepository.findByUsername(username).map(AppUser::isTeamLead).orElse(false);
+        boolean leadSomewhere = memberRepository.findByUsername(username).stream()
+                .anyMatch(m -> m.getRole() == ProjectRole.LEAD);
+        return flagged || leadSomewhere;
     }
 
     @Transactional
     public Project create(ProjectRequest request, String username) {
+        if (!canCreateProjects(username)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only team leads can create projects");
+        }
         String prefix = request.keyPrefix();
         if (prefix == null || !prefix.matches("[A-Z]{2,5}")) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
@@ -39,7 +58,7 @@ public class ProjectService {
         project.setKeyPrefix(prefix);
         Project saved = projectRepository.save(project);
 
-        ProjectMember lead = new ProjectMember(); // the creator becomes the lead
+        ProjectMember lead = new ProjectMember();
         lead.setProjectId(saved.getId());
         lead.setUsername(username);
         lead.setRole(ProjectRole.LEAD);
@@ -72,17 +91,17 @@ public class ProjectService {
         return projectRepository.save(project);
     }
 
+    public Project unlinkRepo(Long id) {
+        Project project = get(id);
+        project.setRepoFullName(null);
+        return projectRepository.save(project);
+    }
+
     @Transactional
     public void delete(Long id) {
         Project project = get(id);
         taskRepository.deleteByProjectId(id);
         memberRepository.deleteByProjectId(id);
         projectRepository.delete(project);
-    }
-
-    public Project unlinkRepo(Long id) {
-        Project project = get(id);
-        project.setRepoFullName(null);
-        return projectRepository.save(project);
     }
 }

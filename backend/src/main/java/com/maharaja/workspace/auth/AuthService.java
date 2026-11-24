@@ -34,6 +34,7 @@ public class AuthService {
         user.setUsername(request.username());
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         user.setGithubUsername(request.githubUsername());
+        user.setTeamLead(Boolean.TRUE.equals(request.teamLead()));
         userRepository.save(user);
         return new AuthResponse(createToken(user.getUsername()), user.getUsername());
     }

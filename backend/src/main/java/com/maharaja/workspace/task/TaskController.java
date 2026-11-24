@@ -23,7 +23,7 @@ public class TaskController {
     @PostMapping("/projects/{projectId}/tasks")
     @ResponseStatus(HttpStatus.CREATED)
     public Task create(@PathVariable Long projectId, @Valid @RequestBody TaskRequest request, Authentication auth) {
-        access.requireMember(projectId, auth.getName());
+        access.requireLead(projectId, auth.getName());
         access.requireAssigneeIsMember(projectId, request.assignee());
         return taskService.create(projectId, request);
     }
@@ -44,7 +44,7 @@ public class TaskController {
     @PutMapping("/tasks/{id}")
     public Task update(@PathVariable Long id, @Valid @RequestBody TaskRequest request, Authentication auth) {
         Task task = taskService.get(id);
-        access.requireMember(task.getProjectId(), auth.getName());
+        access.requireLead(task.getProjectId(), auth.getName());
         access.requireAssigneeIsMember(task.getProjectId(), request.assignee());
         return taskService.update(id, request);
     }

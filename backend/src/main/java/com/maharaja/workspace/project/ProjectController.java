@@ -6,6 +6,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/projects")
@@ -30,6 +31,11 @@ public class ProjectController {
         return projectService.findForUser(auth.getName());
     }
 
+    @GetMapping("/can-create")
+    public Map<String, Boolean> canCreate(Authentication auth) {
+        return Map.of("canCreate", projectService.canCreateProjects(auth.getName()));
+    }
+
     @GetMapping("/{id}")
     public Project get(@PathVariable Long id, Authentication auth) {
         access.requireMember(id, auth.getName());
@@ -48,16 +54,16 @@ public class ProjectController {
         return projectService.linkRepo(id, request.repoFullName());
     }
 
+    @DeleteMapping("/{id}/repo")
+    public Project unlinkRepo(@PathVariable Long id, Authentication auth) {
+        access.requireLead(id, auth.getName());
+        return projectService.unlinkRepo(id);
+    }
+
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id, Authentication auth) {
         access.requireLead(id, auth.getName());
         projectService.delete(id);
-    }
-
-    @DeleteMapping("/{id}/repo")
-    public Project unlinkRepo(@PathVariable Long id, Authentication auth) {
-        access.requireLead(id, auth.getName());
-        return projectService.unlinkRepo(id);
     }
 }

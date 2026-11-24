@@ -1,11 +1,14 @@
 package com.maharaja.workspace.project;
 
+import com.maharaja.workspace.auth.AppUser;
 import com.maharaja.workspace.auth.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class ProjectMemberService {
@@ -20,6 +23,18 @@ public class ProjectMemberService {
 
     public List<ProjectMember> list(Long projectId) {
         return memberRepository.findByProjectIdOrderByIdAsc(projectId);
+    }
+
+    /** Usernames starting with the prefix that are not yet in this project. */
+    public List<String> candidates(Long projectId, String prefix) {
+        Set<String> existing = memberRepository.findByProjectIdOrderByIdAsc(projectId).stream()
+                .map(ProjectMember::getUsername)
+                .collect(Collectors.toSet());
+        return userRepository.findTop50ByUsernameStartingWithIgnoreCaseOrderByUsernameAsc(prefix).stream()
+                .map(AppUser::getUsername)
+                .filter(name -> !existing.contains(name))
+                .limit(20)
+                .toList();
     }
 
     public ProjectMember add(Long projectId, AddMemberRequest request) {

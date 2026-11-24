@@ -15,9 +15,11 @@ public class AppUser {
     private String username;
 
     @Column(nullable = false)
-    private String passwordHash; // never the real password
+    private String passwordHash;
 
-    private String githubUsername; // used later to match commits to people
+    private String githubUsername;
+
+    private boolean teamLead;
 
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -51,6 +53,14 @@ public class AppUser {
 
     public void setGithubUsername(String githubUsername) {
         this.githubUsername = githubUsername;
+    }
+
+    public boolean isTeamLead() {
+        return teamLead;
+    }
+
+    public void setTeamLead(boolean teamLead) {
+        this.teamLead = teamLead;
     }
 
     public LocalDateTime getCreatedAt() {

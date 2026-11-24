@@ -13,7 +13,6 @@ public class ProjectMemberController {
 
     private final ProjectMemberService memberService;
     private final ProjectAccessService access;
-    
 
     public ProjectMemberController(ProjectMemberService memberService, ProjectAccessService access) {
         this.memberService = memberService;
@@ -24,6 +23,14 @@ public class ProjectMemberController {
     public List<ProjectMember> list(@PathVariable Long projectId, Authentication auth) {
         access.requireMember(projectId, auth.getName());
         return memberService.list(projectId);
+    }
+
+    @GetMapping("/candidates")
+    public List<String> candidates(@PathVariable Long projectId,
+            @RequestParam(defaultValue = "") String q,
+            Authentication auth) {
+        access.requireLead(projectId, auth.getName());
+        return memberService.candidates(projectId, q.trim());
     }
 
     @PostMapping
@@ -41,6 +48,4 @@ public class ProjectMemberController {
         access.requireLead(projectId, auth.getName());
         memberService.remove(projectId, username);
     }
-
-
 }
